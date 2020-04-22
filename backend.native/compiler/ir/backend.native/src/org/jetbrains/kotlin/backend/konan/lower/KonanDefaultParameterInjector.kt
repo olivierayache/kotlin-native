@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.irCall
+import org.jetbrains.kotlin.ir.util.render
 
 internal class KonanDefaultParameterInjector(private val konanContext: KonanBackendContext)
     : DefaultParameterInjector(konanContext, skipInline = false) {
@@ -22,7 +23,11 @@ internal class KonanDefaultParameterInjector(private val konanContext: KonanBack
             null -> IrConstImpl.constNull(startOffset, endOffset, context.irBuiltIns.nothingNType)
             PrimitiveBinaryType.BOOLEAN -> IrConstImpl.boolean(startOffset, endOffset, type, false)
             PrimitiveBinaryType.BYTE -> IrConstImpl.byte(startOffset, endOffset, type, 0)
-            PrimitiveBinaryType.SHORT -> IrConstImpl.short(startOffset, endOffset, type, 0)
+            PrimitiveBinaryType.SHORT -> when (type.getInlinedClassNative()) {
+                context.irBuiltIns.short -> IrConstImpl.short(startOffset, endOffset, type, 0)
+                context.irBuiltIns.char -> IrConstImpl.char(startOffset, endOffset, type, 0.toChar())
+                else -> error("Unexpected type with PrimitiveBinaryType.SHORT: ${type.render()}")
+            }
             PrimitiveBinaryType.INT -> IrConstImpl.int(startOffset, endOffset, type, 0)
             PrimitiveBinaryType.LONG -> IrConstImpl.long(startOffset, endOffset, type, 0)
             PrimitiveBinaryType.FLOAT -> IrConstImpl.float(startOffset, endOffset, type, 0.0F)
